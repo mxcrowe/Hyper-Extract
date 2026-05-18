@@ -16,8 +16,8 @@
     # 1. 安装 CLI 工具
     uv tool install hyperextract
 
-    # 2. 配置 API 密钥
-    he config init -k YOUR_OPENAI_API_KEY
+    # 2. 配置 API 密钥（以百炼为例）
+    he config init -p bailian -k YOUR_BAILIAN_API_KEY
 
     # 3. 从文档中提取知识
     he parse sushi.md -t general/biography_graph -o ./output/ -l zh

@@ -4,17 +4,30 @@
 
 ## 快速开始
 
-### 英文演示
+### Provider 配置（三选一）
 
 ```bash
 cd examples
-python en/autotypes/graph_demo.py
+
+# OpenAI
+python providers/openai_demo.py
+
+# 百炼（阿里云）
+python providers/bailian_demo.py
+
+# 本地 vLLM
+python providers/vllm_demo.py
 ```
 
-### 中文示例
+### 完整 Auto-Type 演示
 
 ```bash
 cd examples
+
+# 英文
+python en/autotypes/graph_demo.py
+
+# 中文
 python zh/autotypes/graph_demo.py
 ```
 
@@ -24,6 +37,10 @@ python zh/autotypes/graph_demo.py
 examples/
 ├── README.md
 ├── README_ZH.md              # 本文件
+├── providers/                   # Provider 配置示例
+│   ├── openai_demo.py          # OpenAI 配置
+│   ├── bailian_demo.py         # 百炼（阿里云）配置
+│   └── vllm_demo.py            # 本地 vLLM 配置
 ├── en/                          # 英文演示
 │   ├── tesla.md                # 特斯拉传记数据
 │   ├── tesla_question.md       # 查询问题

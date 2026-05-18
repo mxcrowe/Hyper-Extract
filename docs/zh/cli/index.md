@@ -81,9 +81,45 @@ flowchart TB
 
 ### 1. 配置 API 密钥
 
-```bash
-he config init -k YOUR_OPENAI_API_KEY
-```
+=== "OpenAI"
+
+    ```bash
+    he config init -p openai -k YOUR_OPENAI_API_KEY
+    ```
+
+=== "百炼 (阿里云)"
+
+    ```bash
+    he config init -p bailian -k YOUR_BAILIAN_API_KEY
+    ```
+
+=== "本地 vLLM"
+
+    需先安装 [vLLM](https://docs.vllm.ai/) 并分别启动 LLM 和 Embedding 服务：
+
+    ```bash
+    # 启动 LLM 服务（约需 8GB 显存）
+    vllm serve Qwen/Qwen3.5-9B --port 8000 --api-key dummy
+
+    # 启动 Embedding 服务（约需 2GB 显存）
+    vllm serve BAAI/bge-m3 --task embed --port 8001
+    ```
+
+    然后配置 Hyper-Extract：
+
+    ```bash
+    he config llm -p vllm \
+      -u http://localhost:8000/v1 \
+      -k dummy \
+      -m Qwen/Qwen3.5-9B
+
+    he config embedder -p vllm \
+      -u http://localhost:8001/v1 \
+      -k dummy \
+      -m BAAI/bge-m3
+    ```
+
+    > 完整部署参数（量化、Docker 等）见 [Provider 系统](../concepts/provider-system.md)。
 
 ### 2. 提取知识
 

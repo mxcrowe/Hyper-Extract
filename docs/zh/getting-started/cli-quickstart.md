@@ -13,11 +13,33 @@
 
 ## 第 1 步：配置 API 密钥
 
-运行以下命令配置 API 密钥：
+选择你的部署方式并运行对应的配置命令：
 
-```bash
-he config init -k YOUR_OPENAI_API_KEY
-```
+=== "OpenAI"
+
+    ```bash
+    he config init -p openai -k YOUR_OPENAI_API_KEY
+    ```
+
+=== "百炼 (阿里云)"
+
+    ```bash
+    he config init -p bailian -k YOUR_BAILIAN_API_KEY
+    ```
+
+=== "本地 vLLM"
+
+    ```bash
+    he config llm -p vllm \
+      -u http://localhost:8000/v1 \
+      -k dummy \
+      -m Qwen/Qwen3.5-9B
+
+    he config embedder -p vllm \
+      -u http://localhost:8001/v1 \
+      -k dummy \
+      -m BAAI/bge-m3
+    ```
 
 这会在 `~/.he/config.toml` 创建配置文件，只需配置一次。
 

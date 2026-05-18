@@ -14,7 +14,7 @@ he config [COMMAND] [OPTIONS]
 
 | Command | Description |
 |---------|-------------|
-| `init` | Initialize configuration (lazy defaults: `gpt-4o-mini` + `text-embedding-3-small`) |
+| `init` | Initialize configuration (uses provider preset to auto-fill model and URL) |
 | `show` | Display current configuration |
 | `llm` | Configure LLM settings |
 | `embedder` | Configure embedder settings |
@@ -23,10 +23,10 @@ he config [COMMAND] [OPTIONS]
 
 ## he config init
 
-Initialize configuration. This is the **lazy one-step setup** — if you pass `-k`, it skips all prompts and uses the built-in defaults:
+Initialize configuration. This is the **lazy one-step setup** — if you pass `-p` and `-k`, it skips all prompts and uses built-in presets:
 
-- **LLM**: `gpt-4o-mini`
-- **Embedder**: `text-embedding-3-small`
+- **OpenAI preset**: `gpt-4o-mini` + `text-embedding-3-small`
+- **Bailian preset**: `qwen3.6-plus` + `text-embedding-v4`
 
 ```bash
 he config init [OPTIONS]
@@ -36,6 +36,7 @@ he config init [OPTIONS]
 
 | Option | Short | Description |
 |--------|-------|-------------|
+| `--provider` | `-p` | Provider preset (`openai` / `bailian` / `vllm`) |
 | `--api-key` | `-k` | API key for both LLM and embedder |
 | `--base-url` | `-u` | Custom API base URL (optional) |
 
@@ -44,15 +45,19 @@ he config init [OPTIONS]
 #### Lazy one-step setup (recommended)
 
 ```bash
-he config init -k sk-your-api-key-here
+# OpenAI
+he config init -p openai -k sk-your-api-key-here
+
+# Bailian (Alibaba Cloud)
+he config init -p bailian -k sk-your-api-key-here
 ```
 
-This saves `gpt-4o-mini` and `text-embedding-3-small` automatically.
+This saves the preset's default model and API URL automatically.
 
 #### With custom base URL
 
 ```bash
-he config init -k sk-your-key -u https://api.openai.com/v1
+he config init -p openai -k sk-your-key -u https://api.openai.com/v1
 ```
 
 #### Interactive setup
@@ -75,14 +80,14 @@ he config show
 **Output:**
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│         Hyper-Extract Configuration                     │
-├──────────┬─────────────────────┬─────────────┬──────────┤
-│ Service  │ Model               │ API Key     │ Base URL │
-├──────────┼─────────────────────┼─────────────┼──────────┤
-│ LLM      │ gpt-4o-mini         │ sk-xxxxx... │ (default)│
-│ Embedder │ text-embedding-3... │ sk-xxxxx... │ (default)│
-└──────────┴─────────────────────┴─────────────┴──────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                Hyper-Extract Configuration                       │
+├──────────┬──────────┬─────────────────────┬──────────┬───────────┤
+│ Service  │ Provider │ Model               │ API Key  │ Base URL  │
+├──────────┼──────────┼─────────────────────┼──────────┼───────────┤
+│ LLM      │ bailian  │ qwen3.6-plus        │ sk-xx... │ dashsc... │
+│ Embedder │ bailian  │ text-embedding-v4   │ sk-xx... │ dashsc... │
+└──────────┴──────────┴─────────────────────┴──────────┴───────────┘
 ```
 
 ---
@@ -111,11 +116,17 @@ he config llm [OPTIONS]
 # View LLM config
 he config llm --show
 
-# Update LLM model
-he config llm --model gpt-4o
+# Update LLM model (OpenAI)
+he config llm -p openai --model gpt-4o
 
-# Update LLM API key and endpoint
-he config llm --api-key sk-your-key --base-url https://api.openai.com/v1
+# Update LLM model (Bailian)
+he config llm -p bailian --model qwen-plus
+
+# Configure local vLLM
+he config llm -p vllm \
+  --api-key dummy \
+  --base-url http://localhost:8000/v1 \
+  --model Qwen/Qwen3.5-9B
 
 # Reset LLM config
 he config llm --unset
@@ -147,8 +158,14 @@ he config embedder [OPTIONS]
 # View embedder config
 he config embedder --show
 
-# Use a different embedding model
-he config embedder --model text-embedding-3-large
+# Use a larger OpenAI embedding model
+he config embedder -p openai --model text-embedding-3-large
+
+# Configure local vLLM embedder
+he config embedder -p vllm \
+  --api-key dummy \
+  --base-url http://localhost:8001/v1 \
+  --model BAAI/bge-m3
 
 # Reset embedder config
 he config embedder --unset
@@ -163,19 +180,39 @@ Configuration is stored at:
 - **Linux/macOS**: `~/.he/config.toml`
 - **Windows**: `%USERPROFILE%\.he\config.toml`
 
-### Example
+### Examples
 
-```toml
-[llm]
-model = "gpt-4o-mini"
-api_key = "sk-your-api-key"
-base_url = "https://api.openai.com/v1"
+=== "Bailian (Alibaba Cloud)"
 
-[embedder]
-model = "text-embedding-3-small"
-api_key = ""  # Empty inherits from llm.api_key
-base_url = ""  # Empty inherits from llm.base_url
-```
+    ```toml
+    [llm]
+    provider = "bailian"
+    model = "qwen3.6-plus"
+    api_key = "sk-your-api-key"
+    base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+
+    [embedder]
+    provider = "bailian"
+    model = "text-embedding-v4"
+    api_key = ""
+    base_url = ""
+    ```
+
+=== "Local vLLM"
+
+    ```toml
+    [llm]
+    provider = "vllm"
+    model = "Qwen/Qwen3.5-9B"
+    api_key = "dummy"
+    base_url = "http://localhost:8000/v1"
+
+    [embedder]
+    provider = "vllm"
+    model = "BAAI/bge-m3"
+    api_key = "dummy"
+    base_url = "http://localhost:8001/v1"
+    ```
 
 ## Environment Variables
 

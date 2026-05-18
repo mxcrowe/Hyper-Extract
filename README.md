@@ -264,6 +264,14 @@ display:
 | CLI Tool         |     ✅    |     ❌    |    ❌   |   ❌  |         ✅         |
 | Multi-language   |     ✅    |     ❌    |    ❌   |   ❌  |         ✅         |
 
+## 🤖 Model Compatibility
+
+Hyper-Extract relies on the model's structured output capability (`json_schema` or Function Calling).
+
+**Verified compatible**: OpenAI GPT series, Bailian qwen-plus / qwen-turbo, local vLLM (Qwen3.5-9B GPTQ-Marlin), and more.
+
+> For the full model compatibility list, see [Provider System & Local Model Support](https://yifanfeng97.github.io/Hyper-Extract/latest/concepts/provider-system/).
+
 ## 📚 Related Documentation
 
 - [Documentation](https://yifanfeng97.github.io/Hyper-Extract/latest/) - Complete documentation site

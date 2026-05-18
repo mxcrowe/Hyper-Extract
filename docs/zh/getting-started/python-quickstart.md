@@ -28,13 +28,19 @@ pip install hyperextract
 
 ---
 
-## 第 2 步：配置 API 密钥
+## 第 2 步：配置模型
+
+**方式 A — OpenAI（默认）**
 
 创建 `.env` 文件：
 
 ```bash
 echo "OPENAI_API_KEY=your-api-key" > .env
 ```
+
+**方式 B — 百炼或 vLLM**
+
+平台特定配置见 [Provider 配置指南](../python/guides/provider-configuration.md)。
 
 ---
 

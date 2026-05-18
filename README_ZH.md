@@ -264,6 +264,13 @@ display:
 | 交互式 CLI |     ✅    |     ❌    |    ❌   |   ❌  |         ✅         |
 | 多语言支持   |     ✅    |     ❌    |    ❌   |   ❌  |         ✅         |
 
+## 🤖 模型兼容性
+
+Hyper-Extract 依赖模型的结构化输出能力（`json_schema` 或 Function Calling）。
+
+**已验证兼容**：OpenAI GPT 系列、百炼 qwen-plus / qwen-turbo、本地 vLLM（Qwen3.5-9B GPTQ-Marlin）等。
+
+> 完整模型兼容性列表请参阅 [Provider 系统与本地模型支持](https://yifanfeng97.github.io/Hyper-Extract/latest/zh/concepts/provider-system/)。
 
 ## 📚 相关文档
 

@@ -1,54 +1,84 @@
 # CLI Configuration Reference
 
-Configuration guide for Hyper-Extract CLI, from quick start to advanced settings.
+Configuration guide for Hyper-Extract CLI, supporting **OpenAI**, **Alibaba Cloud Bailian**, and **Local vLLM** deployments.
 
 ---
 
 ## Quick Start
 
-Complete configuration in 3 steps.
+Choose your deployment method and follow the steps.
 
-### 1. Initialize Configuration
+=== "OpenAI"
 
-```bash
-he config init -k YOUR_API_KEY
-```
+    ```bash
+    he config init -p openai -k YOUR_OPENAI_API_KEY
+    ```
 
-This creates `~/.he/config.toml` with the following defaults:
-- **LLM**: `gpt-4o-mini`
-- **Embedder**: `text-embedding-3-small`
+    This creates `~/.he/config.toml` with OpenAI presets:
+    - **LLM**: `gpt-4o-mini`
+    - **Embedder**: `text-embedding-3-small`
 
-### 2. Verify Configuration
+=== "Bailian (Alibaba Cloud)"
+
+    ```bash
+    he config init -p bailian -k YOUR_BAILIAN_API_KEY
+    ```
+
+    This creates `~/.he/config.toml` with Bailian presets:
+    - **LLM**: `qwen3.6-plus`
+    - **Embedder**: `text-embedding-v4`
+
+=== "Local vLLM"
+
+    Start the LLM and Embedding services first, then configure separately:
+
+    ```bash
+    # LLM service
+    he config llm -p vllm \
+      -u http://localhost:8000/v1 \
+      -k dummy \
+      -m Qwen/Qwen3.5-9B
+
+    # Embedding service
+    he config embedder -p vllm \
+      -u http://localhost:8001/v1 \
+      -k dummy \
+      -m BAAI/bge-m3
+    ```
+
+---
+
+## Verify Configuration
 
 ```bash
 he config show
 ```
 
-You should see output like this:
+=== "Cloud API (OpenAI / Bailian)"
 
-```
-┌─────────────────────────────────────────────────────────┐
-│         Hyper-Extract Configuration                     │
-├──────────┬─────────────────────┬─────────────┬──────────┤
-│ Service  │ Model               │ API Key     │ Base URL │
-├──────────┼─────────────────────┼─────────────┼──────────┤
-│ LLM      │ gpt-4o-mini         │ sk-xxxxx... │ (default)│
-│ Embedder │ text-embedding-3... │ sk-xxxxx... │ (default)│
-└──────────┴─────────────────────┴─────────────┴──────────┘
-```
+    ```
+    ┌─────────────────────────────────────────────────────────────┐
+    │              Hyper-Extract Configuration                    │
+    ├──────────┬──────────┬─────────────────────┬────────────┬────┤
+    │ Service  │ Provider │ Model               │ API Key    │ ...│
+    ├──────────┼──────────┼─────────────────────┼────────────┼────┤
+    │ LLM      │ bailian  │ qwen3.6-plus        │ sk-xxxx... │ ...│
+    │ Embedder │ bailian  │ text-embedding-v4   │ sk-xxxx... │ ...│
+    └──────────┴──────────┴─────────────────────┴────────────┴────┘
+    ```
 
-### 3. Modify Configuration (Optional)
+=== "Local vLLM"
 
-```bash
-# Change LLM model
-he config llm --model gpt-4o
-
-# Use different embedder model
-he config embedder --model text-embedding-3-large
-
-# Configure custom API endpoint
-he config llm --base-url https://your-api-endpoint.com/v1
-```
+    ```
+    ┌──────────────────────────────────────────────────────────────────┐
+    │                Hyper-Extract Configuration                       │
+    ├──────────┬──────────┬─────────────────────┬──────────┬───────────┤
+    │ Service  │ Provider │ Model               │ API Key  │ Base URL  │
+    ├──────────┼──────────┼─────────────────────┼──────────┼───────────┤
+    │ LLM      │ vllm     │ Qwen/Qwen3.5-9B     │ dummy... │ localhost…│
+    │ Embedder │ vllm     │ BAAI/bge-m3         │ dummy... │ localhost…│
+    └──────────┴──────────┴─────────────────────┴──────────┴───────────┘
+    ```
 
 ---
 
@@ -58,39 +88,91 @@ he config llm --base-url https://your-api-endpoint.com/v1
 
 | Command | Common Flags | Description |
 |---------|-------------|-------------|
-| `he config init` | `-k, --api-key` — API key<br>`-u, --base-url` — Custom API base URL | Initialize configuration (first time) |
-| `he config llm` | `-m, --model` — Model name<br>`-k, --api-key` — API key<br>`-u, --base-url` — Custom API base URL<br>`--show` — Show current config<br>`--unset` — Clear configuration | Configure LLM |
-| `he config embedder` | `-m, --model` — Model name<br>`-k, --api-key` — API key<br>`-u, --base-url` — Custom API base URL<br>`--show` — Show current config<br>`--unset` — Clear configuration | Configure embedder |
-| `he config show` | — | View complete configuration |
+| `he config init` | `-p, --provider` — Provider preset<br>`-k, --api-key` — API key<br>`-u, --base-url` — Custom API endpoint | Initialize configuration (first time) |
+| `he config llm` | `-p, --provider` — Provider<br>`-m, --model` — Model name<br>`-k, --api-key` — API key<br>`-u, --base-url` — Custom API endpoint<br>`--show` — Show current config<br>`--unset` — Clear configuration | Configure LLM |
+| `he config embedder` | `-p, --provider` — Provider<br>`-m, --model` — Model name<br>`-k, --api-key` — API key<br>`-u, --base-url` — Custom API endpoint<br>`--show` — Show current config<br>`--unset` — Clear configuration | Configure embedder |
+| `he config show` | — | View full configuration |
 
 ### Common Usage Examples
 
 **Interactive initialization (recommended for first-time users):**
+
 ```bash
 he config init
-# Follow prompts to enter model name, API key, etc.
-```
-
-**Non-interactive initialization (for scripts):**
-```bash
-he config init -k sk-your-api-key
+# Follow prompts to select provider, enter model name and API key
 ```
 
 **View LLM configuration:**
+
 ```bash
 he config llm --show
 ```
 
-**Configure embedder separately (using different key):**
-```bash
-he config embedder --api-key sk-embedder-key --model text-embedding-3-large
-```
-
 **Clear configuration (reset to defaults):**
+
 ```bash
 he config llm --unset
 he config embedder --unset
 ```
+
+---
+
+## Per-Platform Configuration Examples
+
+=== "OpenAI"
+
+    ```bash
+    # One-click setup
+    he config init -p openai -k sk-your-key
+
+    # Or switch model
+    he config llm -p openai -k sk-your-key -m gpt-4o
+    ```
+
+=== "Bailian (Alibaba Cloud)"
+
+    ```bash
+    # One-click setup (default qwen3.6-plus + text-embedding-v4)
+    he config init -p bailian -k sk-your-key
+
+    # Or switch model
+    he config llm -p bailian -k sk-your-key -m qwen-plus
+    ```
+
+=== "Local vLLM"
+
+    ```bash
+    # Start services first, then configure separately
+    he config llm -p vllm \
+      -u http://localhost:8000/v1 \
+      -k dummy \
+      -m Qwen/Qwen3.5-9B
+
+    he config embedder -p vllm \
+      -u http://localhost:8001/v1 \
+      -k dummy \
+      -m BAAI/bge-m3
+    ```
+
+=== "Mixed Deployment"
+
+    LLM and Embedder can use different providers:
+
+    ```bash
+    # LLM via Bailian, Embedding via local vLLM
+    he config llm -p bailian -k sk-your-key
+    he config embedder -p vllm \
+      -u http://localhost:8001/v1 \
+      -k dummy \
+      -m BAAI/bge-m3
+
+    # Or LLM via local, Embedding via Bailian
+    he config llm -p vllm \
+      -u http://localhost:8000/v1 \
+      -k dummy \
+      -m Qwen/Qwen3.5-9B
+    he config embedder -p bailian -k sk-your-key
+    ```
 
 ---
 
@@ -105,41 +187,68 @@ Running `he config init` automatically creates `~/.he/config.toml`.
 
 ### Configuration Format
 
-```toml
-[llm]
-model = "gpt-4o-mini"
-api_key = "sk-your-api-key"
-base_url = "https://api.openai.com/v1"
+=== "Cloud API — Bailian"
 
-[embedder]
-model = "text-embedding-3-small"
-api_key = ""  # Empty means inherit from llm.api_key
-base_url = ""  # Empty means inherit from llm.base_url
-```
+    ```toml
+    [llm]
+    provider = "bailian"
+    model = "qwen3.6-plus"
+    api_key = "sk-your-api-key"
+    base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+
+    [embedder]
+    provider = "bailian"
+    model = "text-embedding-v4"
+    api_key = ""
+    base_url = ""
+    ```
+
+=== "Local vLLM"
+
+    ```toml
+    [llm]
+    provider = "vllm"
+    model = "Qwen/Qwen3.5-9B"
+    api_key = "dummy"
+    base_url = "http://localhost:8000/v1"
+
+    [embedder]
+    provider = "vllm"
+    model = "BAAI/bge-m3"
+    api_key = "dummy"
+    base_url = "http://localhost:8001/v1"
+    ```
+
+=== "Mixed Deployment"
+
+    ```toml
+    [llm]
+    provider = "bailian"
+    model = "qwen3.6-plus"
+    api_key = "sk-your-api-key"
+    base_url = ""
+
+    [embedder]
+    provider = "vllm"
+    model = "BAAI/bge-m3"
+    api_key = "dummy"
+    base_url = "http://localhost:8001/v1"
+    ```
 
 ### Configuration Options
 
 | Section | Key | Description | Default |
 |---------|-----|-------------|---------|
-| `[llm]` | `model` | LLM model name | `gpt-4o-mini` |
-| `[llm]` | `api_key` | OpenAI API key | Required |
-| `[llm]` | `base_url` | API base URL | `https://api.openai.com/v1` |
-| `[embedder]` | `model` | Embedding model name | `text-embedding-3-small` |
+| `[llm]` | `provider` | Provider preset | — |
+| `[llm]` | `model` | LLM model name | Depends on provider preset |
+| `[llm]` | `api_key` | API key | Required |
+| `[llm]` | `base_url` | API base URL | Depends on provider preset |
+| `[embedder]` | `provider` | Provider preset | — |
+| `[embedder]` | `model` | Embedding model name | Depends on provider preset |
 | `[embedder]` | `api_key` | API key (empty inherits from llm) | — |
 | `[embedder]` | `base_url` | API base URL (empty inherits from llm) | — |
 
-### Supported Models
-
-**LLM Models:**
-- `gpt-4o-mini` — Fast, cost-effective (default)
-- `gpt-4o` — High quality
-- `gpt-4-turbo` — Best quality
-- Other OpenAI-compatible models
-
-**Embedding Models:**
-- `text-embedding-3-small` — Fast, cost-effective (default)
-- `text-embedding-3-large` — Better quality
-- `text-embedding-ada-002` — Legacy model
+> See the [Provider System](../concepts/provider-system.md) compatibility table for default models per provider.
 
 ---
 
@@ -161,89 +270,52 @@ The following environment variables can be used as configuration fallback:
 
 ---
 
-## Advanced Configuration
-
-### Using OpenAI-Compatible APIs
-
-For Azure, local models, and other OpenAI-compatible APIs:
-
-```toml
-[llm]
-model = "your-model-name"
-api_key = "your-key"
-base_url = "https://your-api-endpoint.com/v1"
-
-[embedder]
-model = "your-embedding-model"
-```
-
-### Different Keys and Base URLs for LLM and Embedder
-
-```toml
-[llm]
-model = "gpt-4o-mini"
-api_key = "sk-llm-key"
-base_url = "https://api.openai.com/v1"
-
-[embedder]
-model = "text-embedding-3-large"
-api_key = "sk-embedder-key"
-base_url = "https://your-embedder-provider.com/v1"
-```
-
----
-
 ## Troubleshooting
 
-### "API key not found"
+=== "Cloud API Issues"
 
-**Cause**: API key not configured
+    **"API key not found"**
 
-**Solution**:
+    ```bash
+    he config init -p bailian -k YOUR_API_KEY
+    ```
 
-```bash
-he config init -k YOUR_API_KEY
-```
+    **"The model does not exist" / 404**
 
-### "Failed to connect to API"
+    Check that the configured model name is available on the platform. See available models in [Provider System](../concepts/provider-system.md).
 
-**Cause**: Network issues or incorrect base_url
+    **"Failed to connect to API"**
 
-**Solution**:
+    ```bash
+    # Check configuration
+    he config llm --show
 
-```bash
-# Check configuration
-he config llm --show
+    # Reset base_url
+    he config llm --base-url https://dashscope.aliyuncs.com/compatible-mode/v1
+    ```
 
-# Reset base_url
-he config llm --base-url https://api.openai.com/v1
-```
+=== "Local vLLM Issues"
 
-### Permission Denied
+    **"Connection refused"**
 
-**Solution**:
+    vLLM service is not running or has stopped:
 
-```bash
-chmod 600 ~/.he/config.toml
-```
+    ```bash
+    # Check if services are running
+    curl http://localhost:8000/v1/models
+    curl http://localhost:8001/v1/models
 
-### Invalid TOML Format
+    # Restart services
+    ```
 
-**Validate configuration**:
+    **"CUDA out of memory"**
 
-```bash
-python3 -c "import tomllib; tomllib.load(open('$HOME/.he/config.toml', 'rb'))"
-```
-
-**Common issues**:
-
-- Missing quotes around strings
-- Trailing commas
-- Incorrect section headers
+    Lower `--gpu-memory-utilization` or use a smaller model / quantized version.
 
 ---
 
 ## See Also
 
 - [`he config`](commands/config.md) — Detailed configuration command reference
+- [Provider System](../concepts/provider-system.md) — Full model compatibility list
 - [Installation Guide](../getting-started/installation.md) — Initial setup steps

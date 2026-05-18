@@ -28,13 +28,19 @@ pip install hyperextract
 
 ---
 
-## Step 2: Configure API Key
+## Step 2: Configure Your Model
+
+**Option A — OpenAI (default)**
 
 Create a `.env` file:
 
 ```bash
 echo "OPENAI_API_KEY=your-api-key" > .env
 ```
+
+**Option B — Bailian or vLLM**
+
+See the [Provider Configuration Guide](../python/guides/provider-configuration.md) for platform-specific setup.
 
 ---
 

@@ -37,9 +37,11 @@ from .types import (
 # Template engine API
 from .utils.template_engine import Template
 
+# Client factory
+from .utils.client import create_client, create_llm, create_embedder, get_client
+
 # Logging utilities
 from .utils.logging import configure_logging, get_logger, set_log_level
-
 
 from importlib.metadata import version
 
@@ -62,6 +64,11 @@ __all__ = [
     "AutoSpatioTemporalGraph",
     # Template engine
     "Template",
+    # Client factory
+    "create_client",
+    "create_llm",
+    "create_embedder",
+    "get_client",
     # Logging utilities
     "configure_logging",
     "get_logger",

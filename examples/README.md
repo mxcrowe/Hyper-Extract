@@ -4,17 +4,30 @@ Examples directory with bilingual demos (English & Chinese).
 
 ## Quick Start
 
-### English Demos
+### Provider Setup (choose one)
 
 ```bash
 cd examples
-python en/autotypes/graph_demo.py
+
+# OpenAI
+python providers/openai_demo.py
+
+# Bailian (Alibaba Cloud)
+python providers/bailian_demo.py
+
+# Local vLLM
+python providers/vllm_demo.py
 ```
 
-### 中文示例
+### Full Auto-Type Demos
 
 ```bash
 cd examples
+
+# English
+python en/autotypes/graph_demo.py
+
+# Chinese
 python zh/autotypes/graph_demo.py
 ```
 
@@ -23,6 +36,10 @@ python zh/autotypes/graph_demo.py
 ```
 examples/
 ├── README.md
+├── providers/                   # Provider configuration demos
+│   ├── openai_demo.py          # OpenAI setup
+│   ├── bailian_demo.py         # Bailian (Alibaba Cloud) setup
+│   └── vllm_demo.py            # Local vLLM setup
 ├── en/                          # English demos
 │   ├── tesla.md                # Tesla biography data
 │   ├── tesla_question.md       # Query questions

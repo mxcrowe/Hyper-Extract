@@ -81,9 +81,45 @@ flowchart TB
 
 ### 1. Configure API Key
 
-```bash
-he config init -k YOUR_OPENAI_API_KEY
-```
+=== "OpenAI"
+
+    ```bash
+    he config init -p openai -k YOUR_OPENAI_API_KEY
+    ```
+
+=== "Bailian (Alibaba Cloud)"
+
+    ```bash
+    he config init -p bailian -k YOUR_BAILIAN_API_KEY
+    ```
+
+=== "Local vLLM"
+
+    First install [vLLM](https://docs.vllm.ai/) and start both services:
+
+    ```bash
+    # Start LLM service (~8GB VRAM)
+    vllm serve Qwen/Qwen3.5-9B --port 8000 --api-key dummy
+
+    # Start Embedding service (~2GB VRAM)
+    vllm serve BAAI/bge-m3 --task embed --port 8001
+    ```
+
+    Then configure Hyper-Extract:
+
+    ```bash
+    he config llm -p vllm \
+      -u http://localhost:8000/v1 \
+      -k dummy \
+      -m Qwen/Qwen3.5-9B
+
+    he config embedder -p vllm \
+      -u http://localhost:8001/v1 \
+      -k dummy \
+      -m BAAI/bge-m3
+    ```
+
+    > Full deployment options (quantization, Docker, etc.) see [Provider System](../concepts/provider-system.md).
 
 ### 2. Extract Knowledge
 

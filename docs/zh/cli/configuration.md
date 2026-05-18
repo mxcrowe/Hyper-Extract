@@ -1,54 +1,84 @@
 # CLI 配置参考
 
-Hyper-Extract CLI 的配置指南，从快速入门到高级设置。
+Hyper-Extract CLI 的配置指南，支持 **OpenAI**、**阿里云百炼** 和 **本地 vLLM** 三种部署方式。
 
 ---
 
 ## 快速开始
 
-只需 3 步完成配置。
+选择你的部署方式，按步骤完成配置。
 
-### 1. 初始化配置
+=== "OpenAI"
 
-```bash
-he config init -k YOUR_API_KEY
-```
+    ```bash
+    he config init -p openai -k YOUR_OPENAI_API_KEY
+    ```
 
-这会创建 `~/.he/config.toml` 配置文件，使用以下默认值：
-- **LLM**: `gpt-4o-mini`
-- **嵌入模型**: `text-embedding-3-small`
+    这会创建 `~/.he/config.toml`，使用 OpenAI 预设：
+    - **LLM**: `gpt-4o-mini`
+    - **嵌入模型**: `text-embedding-3-small`
 
-### 2. 验证配置
+=== "百炼 (阿里云)"
+
+    ```bash
+    he config init -p bailian -k YOUR_BAILIAN_API_KEY
+    ```
+
+    这会创建 `~/.he/config.toml`，使用百炼预设：
+    - **LLM**: `qwen3.6-plus`
+    - **嵌入模型**: `text-embedding-v4`
+
+=== "本地 vLLM"
+
+    需先启动 LLM 和 Embedding 两个服务，然后分别配置：
+
+    ```bash
+    # LLM 服务
+    he config llm -p vllm \
+      -u http://localhost:8000/v1 \
+      -k dummy \
+      -m Qwen/Qwen3.5-9B
+
+    # Embedding 服务
+    he config embedder -p vllm \
+      -u http://localhost:8001/v1 \
+      -k dummy \
+      -m BAAI/bge-m3
+    ```
+
+---
+
+## 验证配置
 
 ```bash
 he config show
 ```
 
-看到类似输出即配置成功：
+=== "云 API (OpenAI / 百炼)"
 
-```
-┌─────────────────────────────────────────────────────────┐
-│         Hyper-Extract Configuration                     │
-├──────────┬─────────────────────┬─────────────┬──────────┤
-│ Service  │ Model               │ API Key     │ Base URL │
-├──────────┼─────────────────────┼─────────────┼──────────┤
-│ LLM      │ gpt-4o-mini         │ sk-xxxxx... │ (default)│
-│ Embedder │ text-embedding-3... │ sk-xxxxx... │ (default)│
-└──────────┴─────────────────────┴─────────────┴──────────┘
-```
+    ```
+    ┌─────────────────────────────────────────────────────────────┐
+    │              Hyper-Extract Configuration                    │
+    ├──────────┬──────────┬─────────────────────┬────────────┬────┤
+    │ Service  │ Provider │ Model               │ API Key    │ ...│
+    ├──────────┼──────────┼─────────────────────┼────────────┼────┤
+    │ LLM      │ bailian  │ qwen3.6-plus        │ sk-xxxx... │ ...│
+    │ Embedder │ bailian  │ text-embedding-v4   │ sk-xxxx... │ ...│
+    └──────────┴──────────┴─────────────────────┴────────────┴────┘
+    ```
 
-### 3. 修改配置（如需）
+=== "本地 vLLM"
 
-```bash
-# 更换 LLM 模型
-he config llm --model gpt-4o
-
-# 使用不同的嵌入模型
-he config embedder --model text-embedding-3-large
-
-# 配置自定义 API 端点
-he config llm --base-url https://your-api-endpoint.com/v1
-```
+    ```
+    ┌──────────────────────────────────────────────────────────────────┐
+    │                Hyper-Extract Configuration                       │
+    ├──────────┬──────────┬─────────────────────┬──────────┬───────────┤
+    │ Service  │ Provider │ Model               │ API Key  │ Base URL  │
+    ├──────────┼──────────┼─────────────────────┼──────────┼───────────┤
+    │ LLM      │ vllm     │ Qwen/Qwen3.5-9B     │ dummy... │ localhost…│
+    │ Embedder │ vllm     │ BAAI/bge-m3         │ dummy... │ localhost…│
+    └──────────┴──────────┴─────────────────────┴──────────┴───────────┘
+    ```
 
 ---
 
@@ -58,35 +88,28 @@ he config llm --base-url https://your-api-endpoint.com/v1
 
 | 命令 | 常用参数 | 描述 |
 |------|---------|------|
-| `he config init` | `-k, --api-key` — API 密钥<br>`-u, --base-url` — 自定义 API 地址 | 初始化配置（首次使用） |
-| `he config llm` | `-m, --model` — 模型名称<br>`-k, --api-key` — API 密钥<br>`-u, --base-url` — 自定义 API 地址<br>`--show` — 查看当前配置<br>`--unset` — 清除配置 | 配置 LLM |
-| `he config embedder` | `-m, --model` — 模型名称<br>`-k, --api-key` — API 密钥<br>`-u, --base-url` — 自定义 API 地址<br>`--show` — 查看当前配置<br>`--unset` — 清除配置 | 配置嵌入模型 |
+| `he config init` | `-p, --provider` — 提供商 preset<br>`-k, --api-key` — API 密钥<br>`-u, --base-url` — 自定义 API 地址 | 初始化配置（首次使用） |
+| `he config llm` | `-p, --provider` — 提供商<br>`-m, --model` — 模型名称<br>`-k, --api-key` — API 密钥<br>`-u, --base-url` — 自定义 API 地址<br>`--show` — 查看当前配置<br>`--unset` — 清除配置 | 配置 LLM |
+| `he config embedder` | `-p, --provider` — 提供商<br>`-m, --model` — 模型名称<br>`-k, --api-key` — API 密钥<br>`-u, --base-url` — 自定义 API 地址<br>`--show` — 查看当前配置<br>`--unset` — 清除配置 | 配置嵌入模型 |
 | `he config show` | — | 查看完整配置 |
 
 ### 常见用法示例
 
 **交互式初始化（推荐首次使用）：**
+
 ```bash
 he config init
-# 按提示输入模型名、API 密钥等信息
-```
-
-**非交互式初始化（脚本中使用）：**
-```bash
-he config init -k sk-your-api-key
+# 按提示选择提供商、输入模型名和 API 密钥
 ```
 
 **查看 LLM 配置：**
+
 ```bash
 he config llm --show
 ```
 
-**单独配置嵌入模型（使用不同密钥）：**
-```bash
-he config embedder --api-key sk-embedder-key --model text-embedding-3-large
-```
-
 **清除配置（重置为默认值）：**
+
 ```bash
 he config llm --unset
 he config embedder --unset
@@ -94,9 +117,68 @@ he config embedder --unset
 
 ---
 
+## 分平台配置示例
+
+=== "OpenAI"
+
+    ```bash
+    # 一键配置
+    he config init -p openai -k sk-your-key
+
+    # 或换模型
+    he config llm -p openai -k sk-your-key -m gpt-4o
+    ```
+
+=== "百炼 (阿里云)"
+
+    ```bash
+    # 一键配置（默认 qwen3.6-plus + text-embedding-v4）
+    he config init -p bailian -k sk-your-key
+
+    # 或换模型
+    he config llm -p bailian -k sk-your-key -m qwen-plus
+    ```
+
+=== "本地 vLLM"
+
+    ```bash
+    # 需先启动服务，然后分别配置
+    he config llm -p vllm \
+      -u http://localhost:8000/v1 \
+      -k dummy \
+      -m Qwen/Qwen3.5-9B
+
+    he config embedder -p vllm \
+      -u http://localhost:8001/v1 \
+      -k dummy \
+      -m BAAI/bge-m3
+    ```
+
+=== "混合部署"
+
+    LLM 和 Embedder 可以使用不同提供商：
+
+    ```bash
+    # LLM 用百炼，Embedding 用本地 vLLM
+    he config llm -p bailian -k sk-your-key
+    he config embedder -p vllm \
+      -u http://localhost:8001/v1 \
+      -k dummy \
+      -m BAAI/bge-m3
+
+    # 或 LLM 用本地，Embedding 用百炼
+    he config llm -p vllm \
+      -u http://localhost:8000/v1 \
+      -k dummy \
+      -m Qwen/Qwen3.5-9B
+    he config embedder -p bailian -k sk-your-key
+    ```
+
+---
+
 ## 配置文件详解
 
-当你运行 `he config init` 时，会自动创建 `~/.he/config.toml` 文件。
+运行 `he config init` 时会自动创建 `~/.he/config.toml`。
 
 ### 文件位置
 
@@ -105,41 +187,68 @@ he config embedder --unset
 
 ### 配置格式
 
-```toml
-[llm]
-model = "gpt-4o-mini"
-api_key = "sk-your-api-key"
-base_url = "https://api.openai.com/v1"
+=== "云 API — 百炼"
 
-[embedder]
-model = "text-embedding-3-small"
-api_key = ""  # 空字符串表示继承 llm.api_key
-base_url = ""  # 空字符串表示继承 llm.base_url
-```
+    ```toml
+    [llm]
+    provider = "bailian"
+    model = "qwen3.6-plus"
+    api_key = "sk-your-api-key"
+    base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+
+    [embedder]
+    provider = "bailian"
+    model = "text-embedding-v4"
+    api_key = ""
+    base_url = ""
+    ```
+
+=== "本地 vLLM"
+
+    ```toml
+    [llm]
+    provider = "vllm"
+    model = "Qwen/Qwen3.5-9B"
+    api_key = "dummy"
+    base_url = "http://localhost:8000/v1"
+
+    [embedder]
+    provider = "vllm"
+    model = "BAAI/bge-m3"
+    api_key = "dummy"
+    base_url = "http://localhost:8001/v1"
+    ```
+
+=== "混合部署"
+
+    ```toml
+    [llm]
+    provider = "bailian"
+    model = "qwen3.6-plus"
+    api_key = "sk-your-api-key"
+    base_url = ""
+
+    [embedder]
+    provider = "vllm"
+    model = "BAAI/bge-m3"
+    api_key = "dummy"
+    base_url = "http://localhost:8001/v1"
+    ```
 
 ### 配置项说明
 
 | 节 | 键 | 描述 | 默认值 |
 |---|-----|------|--------|
-| `[llm]` | `model` | LLM 模型名称 | `gpt-4o-mini` |
-| `[llm]` | `api_key` | OpenAI API 密钥 | 必填 |
-| `[llm]` | `base_url` | API 基础 URL | `https://api.openai.com/v1` |
-| `[embedder]` | `model` | 嵌入模型名称 | `text-embedding-3-small` |
+| `[llm]` | `provider` | 提供商 preset | — |
+| `[llm]` | `model` | LLM 模型名称 | 取决于 provider preset |
+| `[llm]` | `api_key` | API 密钥 | 必填 |
+| `[llm]` | `base_url` | API 基础 URL | 取决于 provider preset |
+| `[embedder]` | `provider` | 提供商 preset | — |
+| `[embedder]` | `model` | 嵌入模型名称 | 取决于 provider preset |
 | `[embedder]` | `api_key` | API 密钥（留空继承 llm） | — |
 | `[embedder]` | `base_url` | API 基础 URL（留空继承 llm） | — |
 
-### 支持的模型
-
-**LLM 模型：**
-- `gpt-4o-mini` — 快速、成本效益高（默认）
-- `gpt-4o` — 高质量
-- `gpt-4-turbo` — 最佳质量
-- 其他 OpenAI 兼容模型
-
-**嵌入模型：**
-- `text-embedding-3-small` — 快速、成本效益高（默认）
-- `text-embedding-3-large` — 更好的质量
-- `text-embedding-ada-002` — 传统模型
+> 不同 provider 的默认模型见 [Provider 系统](../concepts/provider-system.md) 兼容性表格。
 
 ---
 
@@ -161,89 +270,52 @@ base_url = ""  # 空字符串表示继承 llm.base_url
 
 ---
 
-## 高级配置
-
-### 使用 OpenAI 兼容 API
-
-对于 Azure、本地模型等 OpenAI 兼容 API：
-
-```toml
-[llm]
-model = "your-model-name"
-api_key = "your-key"
-base_url = "https://your-api-endpoint.com/v1"
-
-[embedder]
-model = "your-embedding-model"
-```
-
-### LLM 和嵌入器使用不同密钥和不同 base_url
-
-```toml
-[llm]
-model = "gpt-4o-mini"
-api_key = "sk-llm-key"
-base_url = "https://api.openai.com/v1"
-
-[embedder]
-model = "text-embedding-3-large"
-api_key = "sk-embedder-key"
-base_url = "https://your-embedder-provider.com/v1"
-```
-
----
-
 ## 故障排除
 
-### "API key not found"
+=== "云 API 问题"
 
-**原因**: 未配置 API 密钥
+    **"API key not found"**
 
-**解决**:
+    ```bash
+    he config init -p bailian -k YOUR_API_KEY
+    ```
 
-```bash
-he config init -k YOUR_API_KEY
-```
+    **"The model does not exist" / 404**
 
-### "Failed to connect to API"
+    检查配置的模型名是否在对应平台可用。百炼可用模型见 [Provider 系统](../concepts/provider-system.md)。
 
-**原因**: 网络问题或 base_url 配置错误
+    **"Failed to connect to API"**
 
-**解决**:
+    ```bash
+    # 检查配置
+    he config llm --show
 
-```bash
-# 检查配置
-he config llm --show
+    # 重新设置 base_url
+    he config llm --base-url https://dashscope.aliyuncs.com/compatible-mode/v1
+    ```
 
-# 重新设置 base_url
-he config llm --base-url https://api.openai.com/v1
-```
+=== "本地 vLLM 问题"
 
-### 权限被拒绝
+    **"Connection refused"**
 
-**解决**:
+    vLLM 服务未启动或服务已停止：
 
-```bash
-chmod 600 ~/.he/config.toml
-```
+    ```bash
+    # 检查服务是否运行
+    curl http://localhost:8000/v1/models
+    curl http://localhost:8001/v1/models
 
-### 无效的 TOML 格式
+    # 重新启动服务
+    ```
 
-**验证配置**:
+    **"CUDA out of memory"**
 
-```bash
-python3 -c "import tomllib; tomllib.load(open('$HOME/.he/config.toml', 'rb'))"
-```
-
-**常见问题**:
-
-- 字符串缺少引号
-- 多余的逗号
-- 错误的节标题（如使用中文标点）
+    降低 `--gpu-memory-utilization` 或换用更小的模型/量化版本。
 
 ---
 
 ## 另请参见
 
 - [`he config`](commands/config.md) — 详细的配置命令说明
+- [Provider 系统](../concepts/provider-system.md) — 完整模型兼容性列表
 - [安装指南](../getting-started/installation.md) — 初始安装步骤

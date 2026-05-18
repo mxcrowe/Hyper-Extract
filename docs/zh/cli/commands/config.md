@@ -14,7 +14,7 @@ he config [COMMAND] [OPTIONS]
 
 | 命令 | 描述 |
 |---------|-------------|
-| `init` | 初始化配置（懒人模式默认使用 `gpt-4o-mini` + `text-embedding-3-small`） |
+| `init` | 初始化配置（使用 provider preset 自动填充模型和地址） |
 | `show` | 显示当前配置 |
 | `llm` | 配置 LLM 设置 |
 | `embedder` | 配置嵌入模型设置 |
@@ -23,10 +23,10 @@ he config [COMMAND] [OPTIONS]
 
 ## he config init
 
-初始化配置。这是**懒人一键配置** —— 只要传入 `-k`，就会自动使用内置默认值，无需任何交互：
+初始化配置。这是**懒人一键配置** —— 只要传入 `-p` 和 `-k`，就会自动使用内置 preset 默认值，无需任何交互：
 
-- **LLM**: `gpt-4o-mini`
-- **嵌入模型**: `text-embedding-3-small`
+- **OpenAI preset**: `gpt-4o-mini` + `text-embedding-3-small`
+- **百炼 preset**: `qwen3.6-plus` + `text-embedding-v4`
 
 ```bash
 he config init [OPTIONS]
@@ -36,6 +36,7 @@ he config init [OPTIONS]
 
 | 选项 | 简写 | 描述 |
 |--------|-------|-------------|
+| `--provider` | `-p` | 提供商 preset (`openai` / `bailian` / `vllm`) |
 | `--api-key` | `-k` | LLM 和嵌入模型的 API 密钥 |
 | `--base-url` | `-u` | 自定义 API 基础 URL（可选） |
 
@@ -44,15 +45,19 @@ he config init [OPTIONS]
 #### 懒人一键配置（推荐）
 
 ```bash
-he config init -k sk-your-api-key-here
+# OpenAI
+he config init -p openai -k sk-your-api-key-here
+
+# 百炼（阿里云）
+he config init -p bailian -k sk-your-api-key-here
 ```
 
-执行后会自动保存默认模型 `gpt-4o-mini` 和 `text-embedding-3-small`。
+执行后会自动保存对应 preset 的默认模型和 API 地址。
 
 #### 使用自定义基础 URL
 
 ```bash
-he config init -k sk-your-key -u https://api.openai.com/v1
+he config init -p openai -k sk-your-key -u https://api.openai.com/v1
 ```
 
 #### 交互式初始化
@@ -75,14 +80,14 @@ he config show
 **输出示例：**
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│         Hyper-Extract Configuration                     │
-├──────────┬─────────────────────┬─────────────┬──────────┤
-│ Service  │ Model               │ API Key     │ Base URL │
-├──────────┼─────────────────────┼─────────────┼──────────┤
-│ LLM      │ gpt-4o-mini         │ sk-xxxxx... │ (default)│
-│ Embedder │ text-embedding-3... │ sk-xxxxx... │ (default)│
-└──────────┴─────────────────────┴─────────────┴──────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                Hyper-Extract Configuration                       │
+├──────────┬──────────┬─────────────────────┬──────────┬───────────┤
+│ Service  │ Provider │ Model               │ API Key  │ Base URL  │
+├──────────┼──────────┼─────────────────────┼──────────┼───────────┤
+│ LLM      │ bailian  │ qwen3.6-plus        │ sk-xx... │ dashsc... │
+│ Embedder │ bailian  │ text-embedding-v4   │ sk-xx... │ dashsc... │
+└──────────┴──────────┴─────────────────────┴──────────┴───────────┘
 ```
 
 ---
@@ -111,11 +116,17 @@ he config llm [OPTIONS]
 # 查看 LLM 配置
 he config llm --show
 
-# 修改 LLM 模型
-he config llm --model gpt-4o
+# 修改 LLM 模型（OpenAI）
+he config llm -p openai --model gpt-4o
 
-# 修改 LLM API 密钥和接口地址
-he config llm --api-key sk-your-key --base-url https://api.openai.com/v1
+# 修改 LLM 模型（百炼）
+he config llm -p bailian --model qwen-plus
+
+# 配置本地 vLLM
+he config llm -p vllm \
+  --api-key dummy \
+  --base-url http://localhost:8000/v1 \
+  --model Qwen/Qwen3.5-9B
 
 # 重置 LLM 配置
 he config llm --unset
@@ -147,8 +158,14 @@ he config embedder [OPTIONS]
 # 查看嵌入模型配置
 he config embedder --show
 
-# 使用更大的嵌入模型
-he config embedder --model text-embedding-3-large
+# 使用 OpenAI 更大的嵌入模型
+he config embedder -p openai --model text-embedding-3-large
+
+# 配置本地 vLLM 嵌入
+he config embedder -p vllm \
+  --api-key dummy \
+  --base-url http://localhost:8001/v1 \
+  --model BAAI/bge-m3
 
 # 重置嵌入模型配置
 he config embedder --unset
@@ -165,17 +182,37 @@ he config embedder --unset
 
 ### 配置示例
 
-```toml
-[llm]
-model = "gpt-4o-mini"
-api_key = "sk-your-api-key"
-base_url = "https://api.openai.com/v1"
+=== "百炼 (阿里云)"
 
-[embedder]
-model = "text-embedding-3-small"
-api_key = ""  # 空字符串表示继承 llm.api_key
-base_url = ""  # 空字符串表示继承 llm.base_url
-```
+    ```toml
+    [llm]
+    provider = "bailian"
+    model = "qwen3.6-plus"
+    api_key = "sk-your-api-key"
+    base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+
+    [embedder]
+    provider = "bailian"
+    model = "text-embedding-v4"
+    api_key = ""
+    base_url = ""
+    ```
+
+=== "本地 vLLM"
+
+    ```toml
+    [llm]
+    provider = "vllm"
+    model = "Qwen/Qwen3.5-9B"
+    api_key = "dummy"
+    base_url = "http://localhost:8000/v1"
+
+    [embedder]
+    provider = "vllm"
+    model = "BAAI/bge-m3"
+    api_key = "dummy"
+    base_url = "http://localhost:8001/v1"
+    ```
 
 ## 环境变量
 

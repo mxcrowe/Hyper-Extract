@@ -13,11 +13,33 @@ Get your first knowledge extraction running in 5 minutes using the terminal.
 
 ## Step 1: Configure API Key
 
-Run the following command to configure your API key:
+Choose your deployment method and run the corresponding configuration command:
 
-```bash
-he config init -k YOUR_OPENAI_API_KEY
-```
+=== "OpenAI"
+
+    ```bash
+    he config init -p openai -k YOUR_OPENAI_API_KEY
+    ```
+
+=== "Bailian (Alibaba Cloud)"
+
+    ```bash
+    he config init -p bailian -k YOUR_BAILIAN_API_KEY
+    ```
+
+=== "Local vLLM"
+
+    ```bash
+    he config llm -p vllm \
+      -u http://localhost:8000/v1 \
+      -k dummy \
+      -m Qwen/Qwen3.5-9B
+
+    he config embedder -p vllm \
+      -u http://localhost:8001/v1 \
+      -k dummy \
+      -m BAAI/bge-m3
+    ```
 
 This creates a configuration file at `~/.he/config.toml`. You only need to do this once.
 

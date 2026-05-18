@@ -16,8 +16,8 @@
     # 1. Install CLI tool
     uv tool install hyperextract
 
-    # 2. Configure API Key
-    he config init -k YOUR_OPENAI_API_KEY
+    # 2. Configure API Key (Bailian example)
+    he config init -p bailian -k YOUR_BAILIAN_API_KEY
 
     # 3. Extract knowledge from a document
     he parse tesla.md -t general/biography_graph -o ./output/ -l en
