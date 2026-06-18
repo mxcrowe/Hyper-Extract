@@ -62,7 +62,8 @@ class CompatibleEmbeddings(Embeddings):
         model: str = "text-embedding-ada-002",
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
-        chunk_size: int = 1000,
+        max_batch_size: int = 10,
+        chunk_size: Optional[int] = None,
         max_retries: int = 2,
         **kwargs: Any,
     ):
@@ -74,7 +75,12 @@ class CompatibleEmbeddings(Embeddings):
             max_retries=max_retries,
         )
         self._model = model
-        self._chunk_size = chunk_size
+
+        # max_batch_size caps how many inputs are sent per embeddings request.
+        # Many OpenAI-compatible providers reject large batches (e.g. Bailian /
+        # DashScope caps at 10), so the default is intentionally conservative.
+        # `chunk_size` is the legacy name for this knob and is kept as an alias.
+        self._max_batch_size = chunk_size if chunk_size is not None else max_batch_size
 
         # Determine the tiktoken encoding to use for chunking
         import tiktoken
@@ -119,7 +125,7 @@ class CompatibleEmbeddings(Embeddings):
         if not chunks:
             return []
 
-        # Group chunks into batches of chunk_size
+        # Group chunks into batches no larger than max_batch_size
         all_embeddings: List[Optional[List[float]]] = [None] * len(texts)
         batch: List[Tuple[str, int]] = []
 
@@ -141,7 +147,7 @@ class CompatibleEmbeddings(Embeddings):
 
         for chunk in chunks:
             batch.append(chunk)
-            if len(batch) >= self._chunk_size:
+            if len(batch) >= self._max_batch_size:
                 _embed_batch(batch)
                 batch = []
 
