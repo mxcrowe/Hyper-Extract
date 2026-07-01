@@ -253,13 +253,21 @@ def _build_relationships(
     incident_nodes_extractor: Callable[[Any], Sequence[str]],
     edge_label_extractor: Optional[Callable[[Any], str]],
     by_id: Dict[str, _NoteEntry],
-) -> Tuple[Dict[str, List[str]], int]:
-    """Group edges into per-source-note relationship lines.
+) -> Tuple[Dict[str, List[str]], Dict[str, List[str]], int]:
+    """Group edges into per-note relationship lines.
 
-    Returns a mapping ``{source_node_id: [markdown bullet, ...]}`` and the count
-    of edges that were skipped because no incident node was known.
+    Returns ``(outgoing, incoming, skipped)``:
+    - ``outgoing`` maps a source node id to its ``## Relationships`` bullets
+      (``**label** → [[target]]``).
+    - ``incoming`` maps a target node id to ``## Referenced by`` bullets
+      (``**label** ← [[source]]``), so a node that is only ever an edge *target*
+      still shows its full neighbourhood in its own note instead of appearing
+      bare. Every edge is mirrored: once outgoing under its source, once incoming
+      under each target.
+    - ``skipped`` counts edges with no known incident node.
     """
-    relationships: Dict[str, List[str]] = {}
+    outgoing: Dict[str, List[str]] = {}
+    incoming: Dict[str, List[str]] = {}
     skipped = 0
 
     for edge in edges:
@@ -279,22 +287,24 @@ def _build_relationships(
             or "related to"
         )
         description = _first_field(edge, _DESCRIPTION_FIELDS)
+        suffix = f" — {description}" if description else ""
 
         if target_ids:
             targets = ", ".join(
                 _wikilink(by_id[tid].stem, by_id[tid].title) for tid in target_ids
             )
-            line = f"- **{label}** → {targets}"
+            outgoing.setdefault(source_id, []).append(
+                f"- **{label}** → {targets}{suffix}"
+            )
+            # Mirror the edge under each target so target-only nodes aren't bare.
+            back = _wikilink(by_id[source_id].stem, by_id[source_id].title)
+            for tid in target_ids:
+                incoming.setdefault(tid, []).append(f"- **{label}** ← {back}{suffix}")
         else:
             # Self-contained edge (e.g. a single-member hyperedge): note it.
-            line = f"- **{label}** (self)"
+            outgoing.setdefault(source_id, []).append(f"- **{label}** (self){suffix}")
 
-        if description:
-            line += f" — {description}"
-
-        relationships.setdefault(source_id, []).append(line)
-
-    return relationships, skipped
+    return outgoing, incoming, skipped
 
 
 # ----------------------------------------------------------------------------
@@ -327,7 +337,11 @@ def _build_frontmatter(entry: _NoteEntry) -> Dict[str, Any]:
     return data
 
 
-def _render_note(entry: _NoteEntry, relationship_lines: List[str]) -> str:
+def _render_note(
+    entry: _NoteEntry,
+    relationship_lines: List[str],
+    referenced_by_lines: Optional[List[str]] = None,
+) -> str:
     """Render a single node note's full Markdown content."""
     parts = [_render_frontmatter(_build_frontmatter(entry)), "", f"# {entry.title}", ""]
 
@@ -339,6 +353,12 @@ def _render_note(entry: _NoteEntry, relationship_lines: List[str]) -> str:
         parts.append("## Relationships")
         parts.append("")
         parts.extend(relationship_lines)
+        parts.append("")
+
+    if referenced_by_lines:
+        parts.append("## Referenced by")
+        parts.append("")
+        parts.extend(referenced_by_lines)
         parts.append("")
 
     return "\n".join(parts).rstrip() + "\n"
@@ -387,6 +407,7 @@ def export_to_obsidian(
     edge_label_extractor: Optional[Callable[[Any], str]] = None,
     vault_name: str = "Knowledge Vault",
     include_index: bool = True,
+    include_referenced_by: bool = True,
     overwrite: bool = False,
 ) -> Path:
     """Export graph-structured knowledge to an Obsidian vault.
@@ -435,12 +456,16 @@ def export_to_obsidian(
     entries, by_id = _resolve_notes(
         nodes, node_id_extractor, node_label_extractor, reserved_stems
     )
-    relationships, skipped_edges = _build_relationships(
+    relationships, referenced_by, skipped_edges = _build_relationships(
         edges, incident_nodes_extractor, edge_label_extractor, by_id
     )
 
     for entry in entries:
-        content = _render_note(entry, relationships.get(entry.node_id, []))
+        content = _render_note(
+            entry,
+            relationships.get(entry.node_id, []),
+            referenced_by.get(entry.node_id, []) if include_referenced_by else None,
+        )
         (root / f"{entry.stem}.md").write_text(content, encoding="utf-8")
 
     if include_index and index_stem is not None:
